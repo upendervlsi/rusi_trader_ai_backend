@@ -1,0 +1,46 @@
+########################################################################
+#
+# RUSI Trader AI
+#
+# Market Sessions
+#
+########################################################################
+
+markets:
+
+  NSE:
+
+    enabled: true
+
+    timezone: Asia/Kolkata
+
+    sessions:
+
+      - open: "09:15"
+        close: "15:30"
+
+  BSE:
+
+    enabled: true
+
+    timezone: Asia/Kolkata
+
+    sessions:
+
+      - open: "09:15"
+        close: "15:30"
+
+  MCX:
+
+    enabled: true
+
+    timezone: Asia/Kolkata
+
+    sessions:
+
+      #
+      # Configure these according to the official MCX schedule
+      # and update if the exchange changes its timings.
+      #
+      - open: "09:00"
+        close: "23:30"

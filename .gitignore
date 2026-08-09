@@ -1,0 +1,83 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Test / tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Runtime logs
+*.log
+logs/
+backend_runtime.log
+runtime.log
+
+# Generated runtime data
+runs/
+cache/
+
+# Generated reports / temporary files
+*.tmp
+*.temp
+
+# Archives / backups
+*.zip
+*.tar
+*.tar.gz
+
+# Flutter generated files
+**/.dart_tool/
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Runtime instrument master cache
+cache/
+
+# Flutter generated artifacts
+**/.dart_tool/
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.flutter-plugins-dependencies.json
+**/linux/flutter/ephemeral/
+**/android/.gradle/
+**/android/local.properties/
+
+# Nested Git repositories / local tool repositories
+mobile/flutter/.git/
+
+# Old mobile backups
+rusi_trader_mobile_backup/
+
+# Local archive files
+*.zip
+*.tar
+*.tar.gz
+
+# Old development scratch scripts
+/tt*.py
+/ttup*.py
+/ttup.txt
+
+# Separate Flutter SDK repository - not part of RUSI source
+/mobile/flutter/

@@ -1,0 +1,55 @@
+{
+    "default_market": "CRUDEOIL_FUT",
+    "markets": {
+        "NIFTY_FNO": {
+            "symbol": "NIFTY",
+            "exchange": "NFO",
+            "segment": "INDEX_OPTION"
+        },
+        "CRUDEOIL_FUT": {
+            "symbol": "CRUDEOIL",
+            "exchange": "MCX",
+            "segment": "FUTCOM",
+            "quantity": 1,
+            "order_type": "MARKET",
+            "product_type": "INTRADAY"
+        },
+        "BANKNIFTY_FNO": {
+            "symbol": "BANKNIFTY",
+            "exchange": "NFO",
+            "segment": "INDEX_OPTION"
+        },
+        "FINNIFTY_FNO": {
+            "symbol": "FINNIFTY",
+            "exchange": "NFO",
+            "segment": "INDEX_OPTION"
+        },
+        "MIDCPNIFTY_FNO": {
+            "symbol": "MIDCPNIFTY",
+            "exchange": "NFO",
+            "segment": "INDEX_OPTION"
+        },
+        "SENSEX_FNO": {
+            "symbol": "SENSEX",
+            "exchange": "BFO",
+            "segment": "INDEX_OPTION"
+        },
+        "BANKEX_FNO": {
+            "symbol": "BANKEX",
+            "exchange": "BFO",
+            "segment": "INDEX_OPTION"
+        },
+        "NSE_EQUITY": {
+            "exchange": "NSE"
+        },
+        "BSE_EQUITY": {
+            "exchange": "BSE"
+        },
+        "MCX": {
+            "exchange": "MCX"
+        },
+        "NSE_CURRENCY": {
+            "exchange": "CDS"
+        }
+    }
+}

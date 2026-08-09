@@ -1,0 +1,17 @@
+EMA:
+  weight: 1.0
+
+MACD:
+  weight: 1.2
+
+RSI:
+  weight: 0.8
+
+ADX:
+  weight: 1.5
+
+ATR:
+  weight: 1.0
+
+VOLUME:
+  weight: 1.3

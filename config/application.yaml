@@ -1,0 +1,13 @@
+application:
+
+  application_name: RUSI Trader AI
+
+  version: 1.0.0
+
+  execution_mode: LIVE
+
+  datasource: NONE
+
+  market: NSE
+
+  timezone: Asia/Kolkata

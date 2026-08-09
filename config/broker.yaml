@@ -1,0 +1,17 @@
+broker:
+
+  provider: angel_one
+
+angel_one:
+
+  api_key: "PrrFepj2"
+
+  client_id: "AABQ527846"
+
+  pin: "2580"
+
+  totp_secret: "G636CZH4RENKA6NR5HFSOHNTGE"
+
+  vendor_code: ""
+
+  imei: ""
