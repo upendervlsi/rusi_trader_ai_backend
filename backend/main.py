@@ -16,6 +16,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.health import router as health_router
 from backend.api.dashboard import router as dashboard_router
 from backend.api.market import router as market_router
+from backend.api.market_selection import (
+    router as market_selection_router,
+)
 from backend.api.recommendation import (
     router as recommendation_router,
 )
@@ -33,6 +36,9 @@ from backend.api.options import (
 )
 from backend.api.intelligence_api import (
     router as intelligence_router,
+)
+from backend.api.suggestions import (
+    router as suggestions_router,
 )
 from backend.services.trading_engine_service import (
     TradingEngineService,
@@ -114,6 +120,10 @@ app.include_router(dashboard_router)
 
 app.include_router(market_router)
 
+app.include_router(
+    market_selection_router
+)
+
 app.include_router(recommendation_router)
 
 app.include_router(portfolio_router)
@@ -125,6 +135,8 @@ app.include_router(momentum_router)
 app.include_router(options_router)
 
 app.include_router(intelligence_router)
+
+app.include_router(suggestions_router)
 
 @app.get("/")
 def root():

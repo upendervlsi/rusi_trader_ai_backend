@@ -38,7 +38,8 @@ class TradingEngineService:
 
             cls._instance._thread = None
             cls._instance._running = False
-
+            cls._instance._manager = None
+            cls._instance._selected_market = None
         return cls._instance
 
     # ---------------------------------------------------------
@@ -84,7 +85,66 @@ class TradingEngineService:
     # ---------------------------------------------------------
     # Engine Scheduler
     # ---------------------------------------------------------
+    # ---------------------------------------------------------
+    # Runtime Market Selection
+    # ---------------------------------------------------------
 
+    # ---------------------------------------------------------
+    # Runtime Market Selection
+    # ---------------------------------------------------------
+
+    def select_market(
+        self,
+        market_name: str,
+    ):
+        """
+        Select the market used by the trading engine.
+
+        Runtime selection is stored at the TradingEngineService
+        level so the selection survives ExecutionManager
+        lifecycle boundaries.
+        """
+
+        if not market_name:
+            raise ValueError(
+                "Market name cannot be empty."
+            )
+
+        self._selected_market = market_name
+
+        logger.info(
+            "Runtime Market Selection : %s",
+            market_name,
+        )
+
+        #
+        # If the execution manager already exists,
+        # immediately synchronize it.
+        #
+        if self._manager is not None:
+
+            instrument = (
+                self._manager.select_market(
+                    market_name
+                )
+            )
+
+            return instrument
+
+        #
+        # Engine may not have initialized yet.
+        # Store the selection and let the engine
+        # apply it when ExecutionManager is created.
+        #
+        from config.watchlist.watchlist_manager import (
+            WatchlistManager,
+        )
+
+        watchlist = WatchlistManager()
+
+        return watchlist.get(
+            market_name
+        )
     def _run_engine(self):
 
         logger.info("Loading Configuration")
@@ -94,6 +154,18 @@ class TradingEngineService:
         ).load()
 
         manager = ExecutionManager(config)
+        self._manager = manager
+
+        if self._selected_market:
+
+            logger.info(
+                "Applying Runtime Market Selection : %s",
+                self._selected_market,
+            )
+
+            manager.select_market(
+                self._selected_market
+            )
 
         while self._running:
 

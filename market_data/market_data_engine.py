@@ -208,6 +208,110 @@ class MarketDataEngine:
         )
 
     # ---------------------------------------------------------
+    # Arbitrary Instrument LTP
+    # ---------------------------------------------------------
+
+    def get_instrument_ltp(
+        self,
+        exchange: str,
+        symbol: str,
+        token: str,
+    ) -> LiveMarketData:
+        """
+        Retrieve live LTP for an arbitrary instrument.
+
+        Unlike get_live_ltp(), this method does not use
+        the datasource's default instrument.
+
+        This is required for monitoring option suggestions
+        while the main execution instrument may be a
+        different contract.
+        """
+
+        try:
+
+            response = self._datasource.get_ltp(
+                exchange=exchange,
+                symbol=symbol,
+                token=str(token),
+            )
+
+        except Exception as exc:
+
+            return LiveMarketData(
+
+                symbol=symbol,
+
+                exchange=exchange,
+
+                token=str(token),
+
+                last_price=0.0,
+
+                data_status=(
+                    MarketDataStatus.UNAVAILABLE
+                ),
+
+                received_time=self._now(),
+
+                source="ANGEL_ONE",
+
+                raw_response={
+                    "error": str(exc),
+                },
+
+            )
+
+        price = self._extract_ltp(
+            response
+        )
+
+        if price is None:
+
+            return LiveMarketData(
+
+                symbol=symbol,
+
+                exchange=exchange,
+
+                token=str(token),
+
+                last_price=0.0,
+
+                data_status=(
+                    MarketDataStatus.UNAVAILABLE
+                ),
+
+                received_time=self._now(),
+
+                source="ANGEL_ONE",
+
+                raw_response=response,
+
+            )
+
+        return LiveMarketData(
+
+            symbol=symbol,
+
+            exchange=exchange,
+
+            token=str(token),
+
+            last_price=price,
+
+            data_status=(
+                MarketDataStatus.LIVE
+            ),
+
+            received_time=self._now(),
+
+            source="ANGEL_ONE",
+
+            raw_response=response,
+
+        )
+    # ---------------------------------------------------------
     # Quote
     # ---------------------------------------------------------
 

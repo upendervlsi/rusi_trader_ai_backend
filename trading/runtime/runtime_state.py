@@ -13,12 +13,13 @@ this state instead of independently requesting broker
 market data.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
 @dataclass
 class TradingRuntimeState:
+
     """
     Latest successfully processed trading cycle.
 
@@ -59,6 +60,14 @@ class TradingRuntimeState:
     decision: Any = None
 
     recommendation: Any = None
+
+    # ---------------------------------------------------------
+    # AI Suggestions
+    # ---------------------------------------------------------
+
+    suggestions: list[Any] = field(
+        default_factory=list
+    )
 
     # ---------------------------------------------------------
     # Execution

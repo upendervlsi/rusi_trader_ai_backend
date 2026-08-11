@@ -1,13 +1,9 @@
 """
-========================================================================
-
 RUSI Trader AI
 
 Evidence Fusion
 
 Combines multiple Evidence objects into a weighted score.
-
-========================================================================
 """
 
 from __future__ import annotations
@@ -15,18 +11,23 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable
 
+from common.logger import get_logger
+
 from intelligence.evidence.evidence import Evidence
 from intelligence.signals.signal_type import SignalType
 
 
+logger = get_logger("RUSI")
+
+
 @dataclass(frozen=True, slots=True)
 class FusionResult:
+
     score: float
     confidence: float
 
 
 class EvidenceFusion:
-
     """
     Weighted evidence fusion.
     """
@@ -49,10 +50,12 @@ class EvidenceFusion:
         weights = weights or {}
 
         weighted_sum = 0.0
-
         weighted_confidence = 0.0
-
         total_weight = 0.0
+
+        logger.info(
+            "========== EVIDENCE FUSION =========="
+        )
 
         for evidence in evidence_list:
 
@@ -73,17 +76,26 @@ class EvidenceFusion:
                 1.0,
             )
 
+            logger.info(
+                "Evidence : %s | Signal=%s | "
+                "Confidence=%.4f | Weight=%.4f",
+                evidence.feature_id,
+                evidence.signal,
+                evidence.confidence,
+                weight,
+            )
+
             score = (
-                direction *
-                evidence.confidence *
-                weight
+                direction
+                * evidence.confidence
+                * weight
             )
 
             weighted_sum += score
 
             weighted_confidence += (
-                evidence.confidence *
-                weight
+                evidence.confidence
+                * weight
             )
 
             total_weight += weight
@@ -95,13 +107,48 @@ class EvidenceFusion:
         else:
 
             normalized_score = (
-                weighted_sum /
-                weighted_confidence
+                weighted_sum
+                / weighted_confidence
             )
 
-        confidence = (
-            weighted_confidence /
-            total_weight
+        if total_weight == 0:
+
+            confidence = 0.0
+
+        else:
+
+            confidence = (
+                weighted_confidence
+                / total_weight
+            )
+
+        logger.info(
+            "Fusion Weighted Sum        : %.6f",
+            weighted_sum,
+        )
+
+        logger.info(
+            "Fusion Weighted Confidence : %.6f",
+            weighted_confidence,
+        )
+
+        logger.info(
+            "Fusion Total Weight        : %.6f",
+            total_weight,
+        )
+
+        logger.info(
+            "Fusion Normalized Score    : %.6f",
+            normalized_score,
+        )
+
+        logger.info(
+            "Fusion Confidence          : %.6f",
+            confidence,
+        )
+
+        logger.info(
+            "===================================="
         )
 
         return FusionResult(

@@ -17,7 +17,19 @@ class DefaultOrderBuilder(OrderBuilder):
         context,
     ) -> OrderRequest:
 
-        instrument = context.instrument
+        #
+        # Prefer the recommendation-selected execution
+        # instrument when available.
+        #
+        # Otherwise preserve the existing behaviour.
+        #
+
+        instrument = (
+            context.metadata.get(
+                "execution_instrument"
+            )
+            or context.instrument
+        )
 
         return OrderRequest(
             symbol=instrument.symbol,

@@ -4,11 +4,9 @@ import 'dart:io';
 import 'endpoints.dart';
 
 class ApiClient {
-
   Future<Map<String, dynamic>> get(
     String url,
   ) async {
-
     final uri = Uri.parse(
       "${Endpoints.baseUrl}$url",
     );
@@ -35,51 +33,43 @@ class ApiClient {
     };
 
     try {
-
       print(
         "CONNECTING TO : "
         "${uri.host}:${uri.port}",
       );
 
-      final request =
-          await client.getUrl(uri);
+      final request = await client.getUrl(uri);
 
       print(
         "REQUEST CREATED : $uri",
       );
 
-      final response =
-          await request.close();
+      final response = await request.close();
 
       print(
         "HTTP STATUS : ${response.statusCode}",
       );
 
-      final body =
-          await response
-              .transform(
-                utf8.decoder,
-              )
-              .join();
+      final body = await response
+          .transform(
+            utf8.decoder,
+          )
+          .join();
 
       print(
         "HTTP RESPONSE : $body",
       );
 
-      if (response.statusCode < 200 ||
-          response.statusCode >= 300) {
-
+      if (response.statusCode < 200 || response.statusCode >= 300) {
         throw HttpException(
           "HTTP ${response.statusCode}: $body",
           uri: uri,
         );
       }
 
-      final decoded =
-          jsonDecode(body);
+      final decoded = jsonDecode(body);
 
       if (decoded is! Map<String, dynamic>) {
-
         throw FormatException(
           "Expected JSON object from API.",
         );
@@ -90,9 +80,7 @@ class ApiClient {
       );
 
       return decoded;
-
     } catch (e, stackTrace) {
-
       print("");
       print("================================================");
       print("API REQUEST FAILED");
@@ -108,9 +96,7 @@ class ApiClient {
       print(stackTrace);
 
       rethrow;
-
     } finally {
-
       client.close(
         force: true,
       );

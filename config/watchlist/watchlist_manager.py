@@ -54,10 +54,57 @@ class WatchlistManager:
 
         return self._watchlist["default_market"]
 
+
     def current(self) -> TradingInstrument:
+        """
+        Return the currently selected logical market.
+
+        If no runtime selection has been made, preserve the
+        configured default market for backward compatibility.
+        """
+
+        selected_market = getattr(
+            self,
+            "_selected_market",
+            None,
+        )
+
+        if selected_market:
+            return self.get(selected_market)
 
         return self.get(
             self.default_market
+        )
+
+
+    def select(
+        self,
+        market_name: str,
+    ) -> TradingInstrument:
+        """
+        Select a logical market for the next trading cycle.
+        """
+
+        if not self.exists(market_name):
+            raise ValueError(
+                f"Unknown market: {market_name}"
+            )
+
+        self._selected_market = market_name
+
+        return self.get(market_name)
+
+
+    @property
+    def selected_market(self) -> str:
+        """
+        Return the currently selected market name.
+        """
+
+        return getattr(
+            self,
+            "_selected_market",
+            self.default_market,
         )
 
     def get(

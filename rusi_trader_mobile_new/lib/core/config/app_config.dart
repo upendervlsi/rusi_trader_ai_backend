@@ -21,7 +21,7 @@ class AppConfig {
   //==========================================================
 
   static const String serverIp =
-      "192.168.83.232";
+      "16.113.87.242";
 
   static const int serverPort = 8000;
 
@@ -39,7 +39,7 @@ class AppConfig {
 
     if (Platform.isLinux) {
 
-      return "http://localhost:$serverPort";
+      return "http://$serverIp:$serverPort";
 
     }
 

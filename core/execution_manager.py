@@ -23,7 +23,10 @@ from intelligence.features.default_feature_registry import (
 from intelligence.data.market_series_builder import (
     MarketSeriesBuilder,
 )
-from trading.context.trading_context import TradingContext
+from trading.context.trading_context import (
+    TradingContext,
+    TradingInstrument,
+)
 from intelligence.evidence.default_evidence_registry import (
     create_default_evidence_manager,
 )
@@ -61,6 +64,13 @@ from config.watchlist.watchlist_manager import WatchlistManager
 from tools.market_universe.universe_builder import UniverseBuilder
 
 from trading.runtime.runtime_manager import RuntimeManager
+from trading.suggestions.suggestion import (
+    TradingSuggestion,
+)
+
+from trading.suggestions.suggestion_manager import (
+    SuggestionManager,
+)
 from datetime import datetime
 from backend.services.market_session_service import (
     MarketSessionService,
@@ -68,6 +78,7 @@ from backend.services.market_session_service import (
 from market_data.market_data_engine import (
     MarketDataEngine,
 )
+
 logger = get_logger("RUSI")
 
 
@@ -161,6 +172,43 @@ class ExecutionManager:
         # Runtime Manager
         #
         self._runtime = RuntimeManager()
+        #
+        # AI Suggestion Manager
+        #
+        # Informational suggestions only.
+        # This manager NEVER executes broker orders.
+        #
+
+        self._suggestion_manager = SuggestionManager()
+
+    # ---------------------------------------------------------
+    # Runtime Market Selection
+    # ---------------------------------------------------------
+
+    def select_market(
+        self,
+        market_name: str,
+    ):
+        """
+        Select the logical market for the next execution cycle.
+
+        The existing execution pipeline remains unchanged.
+        WatchlistManager resolves the logical instrument and
+        InstrumentResolver resolves the broker instrument later.
+        """
+
+        instrument = self._watchlist.select(
+            market_name
+        )
+
+        logger.info(
+            "Market Selected : %s | %s | %s",
+            market_name,
+            instrument.symbol,
+            instrument.exchange,
+        )
+
+        return instrument
 
     def run(self):
 
@@ -199,8 +247,19 @@ class ExecutionManager:
         logger.info("Step 2 : Download Historical Data")
 
         # Get logical instrument
+        # Get logical instrument
+        logger.info(
+            "ACTIVE MARKET BEFORE RUN : %s",
+            self._watchlist.selected_market,
+        )
+
         instrument = self._watchlist.current()
 
+        logger.info(
+            "ACTIVE LOGICAL INSTRUMENT : %s | %s",
+            instrument.symbol,
+            instrument.exchange,
+        )
         # Resolve broker token
         from tools.market_universe.instrument_resolver import (
             InstrumentResolver,
@@ -490,6 +549,66 @@ class ExecutionManager:
         )
 
         context.recommendation = recommendation
+
+        #
+        # ---------------------------------------------------------
+        # Resolve execution instrument from recommendation
+        # ---------------------------------------------------------
+        #
+        # IMPORTANT:
+        #
+        # context.instrument remains the analysis instrument.
+        #
+        # For F&O recommendations, the selected option can be
+        # different from the analysis instrument.
+        #
+        # Example:
+        #
+        # Analysis:
+        #     CRUDEOIL19AUG26FUT
+        #
+        # Execution:
+        #     CRUDEOIL17AUG267500PE
+        #
+        # Keep both instruments separate.
+        #
+
+        if (
+            recommendation.exchange
+            and recommendation.option_symbol
+            and recommendation.option_token
+        ):
+
+            context.metadata["execution_instrument"] = (
+                TradingInstrument(
+                    symbol=(
+                        recommendation.option_symbol
+                    ),
+                    exchange=(
+                        recommendation.exchange
+                    ),
+                    token=(
+                        recommendation.option_token
+                    ),
+                    quantity=(
+                        context.instrument.quantity
+                    ),
+                    order_type=(
+                        context.instrument.order_type
+                    ),
+                    product_type=(
+                        context.instrument.product_type
+                    ),
+                )
+            )
+
+            logger.info(
+                "Execution Instrument : %s | %s | %s",
+                recommendation.exchange,
+                recommendation.option_symbol,
+                recommendation.option_token,
+            )
+
         logger.info(
             "Decision Generated"
         )
@@ -845,7 +964,328 @@ class ExecutionManager:
         #
         # Publish Runtime State
         #
+        #
+        #
+        # Publish AI Trading Suggestion
+        #
+        # Converts the existing recommendation into the
+        # informational suggestion layer used by Flutter.
+        #
+        # No broker order is created here.
+        #
 
+        if context.recommendation is not None:
+
+            recommendation = context.recommendation
+
+            #
+            # Use option symbol when available.
+            # Fall back to the existing underlying symbol.
+            #
+
+            suggestion_symbol = (
+                recommendation.option_symbol
+                if recommendation.option_symbol
+                else recommendation.symbol
+            )
+
+            #
+            # -----------------------------------------------------
+            # Get ACTUAL live price for the suggested instrument
+            # -----------------------------------------------------
+            #
+            # IMPORTANT:
+            #
+            # recommendation.entry_price
+            #     = price used by Recommendation Engine
+            #
+            # suggestion_latest_price
+            #     = actual current market LTP of the selected option
+            #
+            # For F&O suggestions we MUST use the actual option LTP.
+            #
+
+            suggestion_latest_price = (
+                recommendation.entry_price
+            )
+
+            if (
+                recommendation.exchange
+                and recommendation.option_symbol
+                and recommendation.option_token
+            ):
+
+                try:
+
+                    suggestion_ltp = (
+                        market_data_engine
+                        .get_instrument_ltp(
+                            exchange=(
+                                recommendation.exchange
+                            ),
+                            symbol=(
+                                recommendation.option_symbol
+                            ),
+                            token=(
+                                recommendation.option_token
+                            ),
+                        )
+                    )
+
+                    if (
+                        suggestion_ltp.last_price is not None
+                        and suggestion_ltp.last_price > 0
+                        and suggestion_ltp.data_status == "LIVE"
+                    ):
+
+                        suggestion_latest_price = (
+                            suggestion_ltp.last_price
+                        )
+
+                        logger.info(
+                            "Suggestion LTP : %s | %s | %s | %.2f",
+                            recommendation.exchange,
+                            recommendation.option_symbol,
+                            recommendation.option_token,
+                            suggestion_latest_price,
+                        )
+
+                    else:
+
+                        logger.warning(
+                            "Suggestion LTP unavailable : "
+                            "%s | %s | %s",
+                            recommendation.exchange,
+                            recommendation.option_symbol,
+                            recommendation.option_token,
+                        )
+
+                except Exception as exc:
+
+                    logger.warning(
+                        "Suggestion LTP lookup failed : %s",
+                        exc,
+                    )
+
+            #
+            # -----------------------------------------------------
+            # Calculate suggestion trade plan from ACTUAL option LTP
+            # -----------------------------------------------------
+            #
+            # Existing risk model:
+            #
+            #   Stop Loss = Entry - 1%
+            #   Target    = Entry + 2%
+            #   Risk      = 1%
+            #   Reward    = 2%
+            #   R:R       = 2.0
+            #
+            # IMPORTANT:
+            #
+            # These calculations are performed on the OPTION
+            # PREMIUM, not on the underlying instrument price.
+            #
+
+            suggestion_entry_price = (
+                suggestion_latest_price
+            )
+
+            #
+            # Direction-aware option trade plan
+            #
+            # BUY:
+            #   SL     = 1% below entry
+            #   Target = 2% above entry
+            #
+            # SELL:
+            #   SL     = 1% above entry
+            #   Target = 2% below entry
+            #
+
+            suggestion_signal = (
+                recommendation.recommendation.upper()
+            )
+
+            if suggestion_signal == "BUY":
+
+                suggestion_stop_loss = (
+                    suggestion_entry_price * 0.99
+                )
+
+                suggestion_target_price = (
+                    suggestion_entry_price * 1.02
+                )
+
+            elif suggestion_signal == "SELL":
+
+                suggestion_stop_loss = (
+                    suggestion_entry_price * 1.01
+                )
+
+                suggestion_target_price = (
+                    suggestion_entry_price * 0.98
+                )
+
+            else:
+
+                #
+                # HOLD should normally never reach
+                # the suggestion manager because
+                # SuggestionManager accepts only
+                # BUY / SELL.
+                #
+                suggestion_stop_loss = (
+                    suggestion_entry_price
+                )
+
+                suggestion_target_price = (
+                    suggestion_entry_price
+                )
+
+            suggestion_risk = abs(
+                suggestion_entry_price
+                - suggestion_stop_loss
+            )
+
+            suggestion_reward = abs(
+                suggestion_target_price
+                - suggestion_entry_price
+            )
+
+            suggestion_risk_reward = (
+                suggestion_reward / suggestion_risk
+                if suggestion_risk > 0
+                else 0.0
+            )
+
+            logger.info(
+                "Suggestion Trade Plan : "
+                "Signal=%s | "
+                "Entry=%.2f | "
+                "SL=%.2f | "
+                "Target=%.2f | "
+                "R:R=%.2f",
+                suggestion_signal,
+                suggestion_entry_price,
+                suggestion_stop_loss,
+                suggestion_target_price,
+                suggestion_risk_reward,
+            )
+
+            logger.info(
+                "Suggestion Trade Plan : "
+                "Entry=%.2f | SL=%.2f | Target=%.2f | R:R=%.2f",
+                suggestion_entry_price,
+                suggestion_stop_loss,
+                suggestion_target_price,
+                suggestion_risk_reward,
+            )
+
+            #
+            # -----------------------------------------------------
+            # Create suggestion
+            # -----------------------------------------------------
+            #
+
+            suggestion = TradingSuggestion(
+
+                category="F&O",
+
+                symbol=suggestion_symbol,
+
+                exchange=recommendation.exchange,
+
+                #
+                # Actual current option market price
+                #
+                latest_price=(
+                    suggestion_latest_price
+                ),
+
+                signal=(
+                    recommendation.recommendation
+                ),
+
+                #
+                # Option-based trade plan
+                #
+                entry_price=(
+                    suggestion_entry_price
+                ),
+
+                stop_loss=(
+                    suggestion_stop_loss
+                ),
+
+                target_price=(
+                    suggestion_target_price
+                ),
+
+                risk_reward=(
+                    suggestion_risk_reward
+                ),
+
+                #
+                # AI decision information
+                #
+                confidence=(
+                    recommendation.confidence
+                ),
+
+                score=(
+                    recommendation.score
+                ),
+
+                reasons=list(
+                    recommendation.reasons
+                ),
+
+                #
+                # Selected option information
+                #
+                underlying_symbol=(
+                    recommendation.underlying_symbol
+                ),
+
+                option_symbol=(
+                    recommendation.option_symbol
+                ),
+
+                option_token=(
+                    recommendation.option_token
+                ),
+
+                option_type=(
+                    recommendation.option_type
+                ),
+
+                strike=(
+                    recommendation.strike
+                ),
+
+                expiry=(
+                    recommendation.expiry
+                ),
+
+                status="WATCHING",
+            )
+
+            #
+            # Confidence <= 50% is automatically ignored
+            # inside SuggestionManager.
+            #
+
+            self._suggestion_manager.publish(
+                suggestion
+            )
+
+        #
+        # Snapshot active suggestions for runtime state.
+        #
+
+        suggestions = (
+            self._suggestion_manager.get_active()
+        )
         runtime_data = {
             "snapshot": snapshot,
             "intelligence": intelligence,
@@ -858,6 +1298,10 @@ class ExecutionManager:
             "updated_time": datetime.now().isoformat(),
             "data_status": live_market_data.data_status,
             "live_price": live_market_data.last_price,
+            #
+            # Active AI suggestions for Flutter
+            #
+            "suggestions": suggestions,
         }
 
         if "portfolio" in locals():
