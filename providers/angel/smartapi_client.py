@@ -230,3 +230,85 @@ class SmartApiClient:
         print(response)
 
         return response
+    # ---------------------------------------------------------
+    # Put / Call Ratio
+    # ---------------------------------------------------------
+
+    def get_put_call_ratio(self):
+        """
+        Fetch cumulative Put / Call Ratio from Angel One.
+        """
+
+        print(
+            "\n========== SmartAPI PCR Request =========="
+        )
+
+        response = self._api.putCallRatio()
+
+        print(
+            "\n========== SmartAPI PCR Response =========="
+        )
+
+        print(response)
+
+        return response
+
+    # ---------------------------------------------------------
+    # OI Buildup
+    # ---------------------------------------------------------
+
+    def get_oi_buildup(
+        self,
+        params,
+    ):
+        """
+        Fetch option OI buildup information.
+        """
+
+        print(
+            "\n========== SmartAPI OI Buildup Request =========="
+        )
+
+        print(params)
+
+        response = self._api.oIBuildup(
+            params
+        )
+
+        print(
+            "\n========== SmartAPI OI Buildup Response =========="
+        )
+
+        print(response)
+
+        return response
+
+    # ---------------------------------------------------------
+    # Option Greeks
+    # ---------------------------------------------------------
+
+    def get_option_greeks(
+        self,
+        params,
+    ):
+        """
+        Fetch option Greeks information.
+        """
+
+        print(
+            "\n========== SmartAPI Option Greeks Request =========="
+        )
+
+        print(params)
+
+        response = self._api.optionGreek(
+            params
+        )
+
+        print(
+            "\n========== SmartAPI Option Greeks Response =========="
+        )
+
+        print(response)
+
+        return response

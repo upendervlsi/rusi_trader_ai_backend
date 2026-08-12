@@ -187,3 +187,36 @@ class AngelDataSource:
             exchange=exchange,
             symbol_token=token,
         )
+    # ---------------------------------------------------------
+    # Put / Call Ratio
+    # ---------------------------------------------------------
+
+    def get_put_call_ratio(self):
+
+        return self._client.get_put_call_ratio()
+
+    # ---------------------------------------------------------
+    # OI Buildup
+    # ---------------------------------------------------------
+
+    def get_oi_buildup(
+        self,
+        params,
+    ):
+
+        return self._client.get_oi_buildup(
+            params
+        )
+
+    # ---------------------------------------------------------
+    # Option Greeks
+    # ---------------------------------------------------------
+
+    def get_option_greeks(
+        self,
+        params,
+    ):
+
+        return self._client.get_option_greeks(
+            params
+        )

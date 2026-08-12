@@ -11,6 +11,7 @@ from intelligence.trend_engine import TrendEngine
 from intelligence.market_structure_engine import (
     MarketStructureEngine,
 )
+from intelligence.options_engine import OptionsEngine
 
 class IntelligenceManager:
 
@@ -30,6 +31,11 @@ class IntelligenceManager:
         self._manager.register(
             MarketStructureEngine()
         )
+
+        self._manager.register(
+            OptionsEngine()
+        )
+
         #
         # Future Engines
         #

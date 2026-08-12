@@ -74,19 +74,15 @@ class IntelligenceEngine:
 
         for analyzer in self.analyzers:
 
-            result = analyzer.analyze(
+            analyzer_results.append(
 
-                snapshot,
+                analyzer.analyze(
+
+                    snapshot,
+
+                )
 
             )
-
-            analyzer_results.append(result)
-
-            # Publish Options analyzer result into the
-            # authoritative MarketSnapshot analysis bundle.
-            if getattr(analyzer, "name", "") == "Options":
-
-                snapshot.analysis.options = result
 
         confidence = (
 
