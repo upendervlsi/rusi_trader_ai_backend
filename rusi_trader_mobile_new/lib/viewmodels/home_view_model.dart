@@ -9,17 +9,16 @@ import '../models/market_model.dart';
 import '../models/recommendation_model.dart';
 import '../models/portfolio_model.dart';
 
-class HomeViewModel extends ChangeNotifier {
 
-  //==========================================================
-  // Repository
-  //==========================================================
+class HomeViewModel
+    extends ChangeNotifier {
 
   final HomeRepository _repository =
       HomeRepository();
 
+
   //==========================================================
-  // Data
+  // DATA
   //==========================================================
 
   DashboardModel? dashboard;
@@ -30,53 +29,54 @@ class HomeViewModel extends ChangeNotifier {
 
   PortfolioModel? portfolio;
 
+
   //==========================================================
-  // UI State
+  // UI STATE
   //==========================================================
 
   bool loading = true;
 
   String? error;
 
+
   //==========================================================
-  // Live Refresh
+  // LIVE REFRESH
   //==========================================================
 
   Timer? _refreshTimer;
 
-  bool _refreshInProgress = false;
+  bool _refreshInProgress =
+      false;
 
-  static const Duration _refreshInterval =
-      Duration(seconds: 30);
+  static const Duration
+      _refreshInterval =
+      Duration(seconds: 5);
+
 
   //==========================================================
-  // Initial Load
+  // INITIAL LOAD
   //==========================================================
 
   Future<void> load() async {
-
-    print("=================================");
-    print("HOME VIEWMODEL LOAD()");
-    print("=================================");
-
     loading = true;
 
     notifyListeners();
 
-    await _loadData();
+    await _initialLoad();
 
     loading = false;
 
     notifyListeners();
   }
 
+
   //==========================================================
-  // Internal Data Load
+  // INITIAL LOAD
+  //
+  // Full supporting data is loaded once.
   //==========================================================
 
-  Future<void> _loadData() async {
-
-    // Prevent two refresh cycles from running together.
+  Future<void> _initialLoad() async {
     if (_refreshInProgress) {
       return;
     }
@@ -84,95 +84,123 @@ class HomeViewModel extends ChangeNotifier {
     _refreshInProgress = true;
 
     try {
-
       //======================================================
-      // Dashboard
+      // PRIMARY DASHBOARD
       //======================================================
 
       dashboard =
-          await _repository.getDashboard();
-
-      print("Dashboard Loaded");
+          await _repository
+              .getDashboard();
 
       //======================================================
-      // Market
+      // EXISTING SUPPORTING DATA
+      //
+      // Needed by the existing detailed cards.
       //======================================================
 
       market =
-          await _repository.getMarket();
-
-      print("Market Loaded");
-
-      //======================================================
-      // Recommendation
-      //======================================================
+          await _repository
+              .getMarket();
 
       recommendation =
-          await _repository.getRecommendation();
-
-      print("Recommendation Loaded");
-
-      //======================================================
-      // Portfolio
-      //======================================================
+          await _repository
+              .getRecommendation();
 
       portfolio =
-          await _repository.getPortfolio();
-
-      print("Portfolio Loaded");
+          await _repository
+              .getPortfolio();
 
       error = null;
 
     } catch (e, stackTrace) {
+      debugPrint(
+        "HOME INITIAL LOAD ERROR: $e",
+      );
 
-      print("=================================");
-      print("HOME VIEWMODEL ERROR");
-      print("=================================");
-
-      print(e);
-      print(stackTrace);
-
-      print("=================================");
+      debugPrint(
+        "$stackTrace",
+      );
 
       error = e.toString();
 
     } finally {
-
       _refreshInProgress = false;
     }
   }
 
+
   //==========================================================
-  // Start Live Refresh
+  // FAST DASHBOARD REFRESH
+  //
+  // IMPORTANT:
+  // Do NOT reload /market, /recommendation and /portfolio
+  // every five seconds.
+  //
+  // /api/dashboard is now the fast Home snapshot.
+  //==========================================================
+
+  Future<void> _refreshDashboard()
+      async {
+
+    if (_refreshInProgress) {
+      return;
+    }
+
+    _refreshInProgress = true;
+
+    try {
+      final latestDashboard =
+          await _repository
+              .getDashboard();
+
+      dashboard =
+          latestDashboard;
+
+      error = null;
+
+    } catch (e, stackTrace) {
+      debugPrint(
+        "HOME DASHBOARD REFRESH ERROR: $e",
+      );
+
+      debugPrint(
+        "$stackTrace",
+      );
+
+      //
+      // Keep the last good dashboard
+      // visible instead of blanking the UI.
+      //
+      error = e.toString();
+
+    } finally {
+      _refreshInProgress = false;
+    }
+  }
+
+
+  //==========================================================
+  // START LIVE REFRESH
   //==========================================================
 
   void startLiveRefresh() {
 
-    // Prevent duplicate timers.
     if (_refreshTimer != null) {
       return;
     }
-
-    print("=================================");
-    print("HOME LIVE REFRESH STARTED");
-    print(
-      "INTERVAL : "
-      "${_refreshInterval.inSeconds} seconds",
-    );
-    print("=================================");
 
     _refreshTimer =
         Timer.periodic(
       _refreshInterval,
       (_) async {
-
         await refresh();
       },
     );
   }
 
+
   //==========================================================
-  // Stop Live Refresh
+  // STOP LIVE REFRESH
   //==========================================================
 
   void stopLiveRefresh() {
@@ -180,31 +208,27 @@ class HomeViewModel extends ChangeNotifier {
     _refreshTimer?.cancel();
 
     _refreshTimer = null;
-
-    print("=================================");
-    print("HOME LIVE REFRESH STOPPED");
-    print("=================================");
   }
 
+
   //==========================================================
-  // Refresh
+  // REFRESH
   //==========================================================
 
   Future<void> refresh() async {
 
-    print("");
-    print("=================================");
-    print("HOME LIVE REFRESH");
-    print("=================================");
+    await _refreshDashboard();
 
-    await _loadData();
+    if (!hasListeners) {
+      return;
+    }
 
-    // Update UI with latest values.
     notifyListeners();
   }
 
+
   //==========================================================
-  // Dispose
+  // DISPOSE
   //==========================================================
 
   @override

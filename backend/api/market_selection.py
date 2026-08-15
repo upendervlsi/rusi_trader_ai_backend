@@ -33,7 +33,6 @@ def get_markets():
         "markets": [
             "NIFTY_FNO",
             "BANKNIFTY_FNO",
-            "CRUDEOIL_FUT",
             "FINNIFTY_FNO",
             "MIDCPNIFTY_FNO",
             "SENSEX_FNO",

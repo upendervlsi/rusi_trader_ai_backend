@@ -13,35 +13,35 @@ class DashboardGrid extends StatelessWidget {
     //==========================================================
     // MOBILE
     //
-    // Android uses a vertical scroll layout so cards can take
-    // their natural height. This prevents Bottom Overflow on
-    // narrow phone screens.
+    // Vertical layout.
+    // Cards use their natural height.
     //==========================================================
 
     if (Theme.of(context).platform == TargetPlatform.android) {
-      return ListView.separated(
-        padding: EdgeInsets.zero,
-        itemCount: children.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          return children[index];
-        },
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (int i = 0; i < children.length; i++) ...[
+            children[i],
+            if (i != children.length - 1)
+              const SizedBox(height: 16),
+          ],
+        ],
       );
     }
 
     //==========================================================
     // DESKTOP
     //
-    // Preserve the existing responsive grid.
+    // Responsive grid.
+    //
+    // Market Pulse is intentionally allowed to be taller
+    // because it contains the complete market-wide view.
     //==========================================================
 
     return LayoutBuilder(
       builder: (context, constraints) {
         int columns;
-
-        //--------------------------------------------------
-        // Responsive Columns
-        //--------------------------------------------------
 
         if (constraints.maxWidth >= 1800) {
           columns = 4;
@@ -55,21 +55,29 @@ class DashboardGrid extends StatelessWidget {
 
         return GridView.builder(
           padding: EdgeInsets.zero,
+
+          shrinkWrap: true,
+
+          physics: const NeverScrollableScrollPhysics(),
+
           itemCount: children.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+
+          gridDelegate:
+              SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
 
             crossAxisSpacing: 20,
 
             mainAxisSpacing: 20,
 
-            //--------------------------------------------------
-            // Increased card height to avoid overflow
-            //--------------------------------------------------
-
-            childAspectRatio: 1.45,
+            // Give dashboard cards enough vertical space.
+            childAspectRatio: 1.15,
           ),
-          itemBuilder: (context, index) {
+
+          itemBuilder: (
+            context,
+            index,
+          ) {
             return children[index];
           },
         );

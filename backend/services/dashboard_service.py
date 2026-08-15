@@ -7,8 +7,6 @@ Dashboard Service
 
 Provides complete dashboard information for Flutter.
 
-Author : RUSI Trader AI
-
 ============================================================
 """
 
@@ -23,88 +21,157 @@ from backend.services.market_service import (
 from backend.services.recommendation_service import (
     RecommendationService,
 )
+
+from backend.services.market_monitor.market_monitor_service import (
+    MarketMonitorService,
+)
+
+from backend.services.market_pulse_service import (
+    MarketPulseService,
+)
+
 from backend.models.dashboard_model import (
     DashboardModel,
     PortfolioSummaryModel,
 )
 
-from backend.models.market_quote_model import (
-    MarketQuoteModel,
-)
-from backend.services.market_monitor.market_monitor_service import (
-    MarketMonitorService,
-)
 
 class DashboardService:
 
     """
-    Dashboard Service
+    Aggregates dashboard information.
 
-    Aggregates all dashboard information.
+    The dashboard is read-only.
 
-    This service never performs calculations.
-
-    It simply collects runtime information from the
-    existing services.
+    No broker calls are performed here.
     """
 
     def __init__(self):
+
         self._market_monitor = (
             MarketMonitorService()
         )
-        self._facade = TradingEngineFacade()
 
-        self._market_service = MarketService()
+        self._facade = (
+            TradingEngineFacade()
+        )
+
+        self._market_service = (
+            MarketService()
+        )
 
         self._recommendation_service = (
             RecommendationService()
         )
 
+        self._market_pulse_service = (
+            MarketPulseService()
+        )
+
+    # ---------------------------------------------------------
+    # Dashboard
+    # ---------------------------------------------------------
+
     def get_dashboard(self):
 
-        state = self._facade.get_runtime_state()
+        state = (
+            self._facade.get_runtime_state()
+        )
 
-        market = self._market_service.get_market()
+        market = (
+            self._market_service.get_market()
+        )
 
         recommendation = (
             self._recommendation_service
             .get_recommendation()
         )
 
-        summary = state.portfolio_summary
+        summary = (
+            state.portfolio_summary
+        )
+
+        updated_time = (
+            state.updated_time
+        )
+
+        #
+        # Existing runtime market information.
+        #
+
+        markets = (
+            self._market_monitor
+            .get_market_quotes()
+        )
+
+        #
+        # New seven-market dashboard view.
+        #
+
+        market_pulse = (
+            self._market_pulse_service
+            .get_market_pulse(
+                updated_time
+            )
+        )
+
+        (
+            strongest_market,
+            strongest_confidence,
+        ) = (
+            self._market_pulse_service
+            .strongest_market(
+                market_pulse
+            )
+        )
 
         return DashboardModel(
 
-            market_status=market.market_status,
+            market_status=
+                market.market_status,
 
-            updated_time=state.updated_time,
+            updated_time=
+                updated_time,
 
-            markets=self._market_monitor.get_market_quotes(),
+            markets=
+                markets,
 
-            recommendation=recommendation.recommendation,
+            market_pulse=
+                market_pulse,
 
-            confidence=recommendation.confidence,
+            strongest_market=
+                strongest_market,
 
-            portfolio=PortfolioSummaryModel(
+            strongest_confidence=
+                strongest_confidence,
 
-                open_positions=
-                    summary.open_positions
-                    if summary
-                    else 0,
+            recommendation=
+                recommendation.recommendation,
 
-                invested_amount=
-                    summary.invested_amount
-                    if summary
-                    else 0.0,
+            confidence=
+                recommendation.confidence,
 
-                market_value=
-                    summary.market_value
-                    if summary
-                    else 0.0,
+            portfolio=
+                PortfolioSummaryModel(
 
-                unrealized_pnl=
-                    summary.unrealized_pnl
-                    if summary
-                    else 0.0,
-            ),
+                    open_positions=
+                        summary.open_positions
+                        if summary
+                        else 0,
+
+                    invested_amount=
+                        summary.invested_amount
+                        if summary
+                        else 0.0,
+
+                    market_value=
+                        summary.market_value
+                        if summary
+                        else 0.0,
+
+                    unrealized_pnl=
+                        summary.unrealized_pnl
+                        if summary
+                        else 0.0,
+                ),
         )
