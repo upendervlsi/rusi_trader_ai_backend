@@ -29,6 +29,10 @@ class TradeRecord:
 
     entry_price: float
 
+    exit_price: float
+
+    realized_pnl: float
+
     decision_signal: str
 
     decision_score: float
@@ -36,5 +40,9 @@ class TradeRecord:
     decision_confidence: float
 
     execution_time: datetime
+
+    exit_time: datetime | None
+
+    exit_reason: str
 
     status: str

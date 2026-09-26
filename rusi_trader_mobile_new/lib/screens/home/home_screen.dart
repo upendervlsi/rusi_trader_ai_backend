@@ -12,10 +12,13 @@ import '../../widgets/dashboard/market_pulse_card.dart';
 import '../../widgets/cards/market_summary_card.dart';
 import '../../widgets/cards/ai_summary_card.dart';
 import '../../widgets/cards/portfolio_summary_card.dart';
+import '../../widgets/cards/paper_trading_summary_card.dart';
 import '../../widgets/cards/trading_status_card.dart';
 import '../../widgets/cards/live_market_card.dart';
 
+
 class HomeScreen extends StatefulWidget {
+
   const HomeScreen({
     super.key,
   });
@@ -25,14 +28,17 @@ class HomeScreen extends StatefulWidget {
       _HomeScreenState();
 }
 
+
 class _HomeScreenState
     extends State<HomeScreen> {
 
   final HomeViewModel vm =
       HomeViewModel();
 
+
   @override
   void initState() {
+
     super.initState();
 
     vm.load();
@@ -40,12 +46,15 @@ class _HomeScreenState
     vm.startLiveRefresh();
   }
 
+
   @override
   void dispose() {
+
     vm.dispose();
 
     super.dispose();
   }
+
 
   //============================================================
   // OPEN MARKET
@@ -54,6 +63,7 @@ class _HomeScreenState
   void _openMarket(
     MarketPulseModel market,
   ) {
+
     //
     // Pass the logical market identifier
     // to the Market screen.
@@ -64,11 +74,13 @@ class _HomeScreenState
     // BANKNIFTY_FNO
     // SENSEX_FNO
     //
+
     context.push(
       "/market",
       extra: market.market,
     );
   }
+
 
   //============================================================
   // BUILD
@@ -78,6 +90,7 @@ class _HomeScreenState
   Widget build(
     BuildContext context,
   ) {
+
     return AnimatedBuilder(
       animation: vm,
 
@@ -85,29 +98,40 @@ class _HomeScreenState
         context,
         _,
       ) {
+
         //======================================================
         // INITIAL LOADING
         //======================================================
 
-        if (vm.loading &&
-            vm.dashboard == null) {
+        if (
+          vm.loading &&
+          vm.dashboard == null
+        ) {
+
           return const Center(
             child:
                 CircularProgressIndicator(),
           );
         }
 
+
         //======================================================
         // ERROR
         //======================================================
 
-        if (vm.error != null &&
-            vm.dashboard == null) {
+        if (
+          vm.error != null &&
+          vm.dashboard == null
+        ) {
+
           return Center(
             child:
-                Text(vm.error!),
+                Text(
+                  vm.error!,
+                ),
           );
         }
+
 
         //======================================================
         // DATA
@@ -125,26 +149,34 @@ class _HomeScreenState
         final portfolio =
             vm.portfolio;
 
+        final paperTrading =
+            vm.paperTrading;
+
+
         //======================================================
         // DASHBOARD
         //======================================================
 
         return RefreshIndicator(
+
           onRefresh:
               vm.refresh,
 
           child:
               SingleChildScrollView(
+
             physics:
                 const AlwaysScrollableScrollPhysics(),
 
             child:
                 Padding(
+
               padding:
                   const EdgeInsets.all(20),
 
               child:
                   DashboardGrid(
+
                 children: [
 
                   //================================================
@@ -163,6 +195,7 @@ class _HomeScreenState
                   //================================================
 
                   MarketPulseCard(
+
                     markets:
                         dashboard.marketPulse,
 
@@ -178,12 +211,15 @@ class _HomeScreenState
                         _openMarket,
                   ),
 
+
                   //================================================
                   // MARKET SUMMARY
                   //================================================
 
                   if (market != null)
+
                     MarketSummaryCard(
+
                       status:
                           dashboard
                               .marketStatus,
@@ -204,12 +240,15 @@ class _HomeScreenState
                               .marketStructure,
                     ),
 
+
                   //================================================
                   // AI DECISION
                   //================================================
 
                   if (recommendation != null)
+
                     AiSummaryCard(
+
                       decision:
                           recommendation
                               .recommendation,
@@ -231,12 +270,15 @@ class _HomeScreenState
                               .marketStatus,
                     ),
 
+
                   //================================================
-                  // PORTFOLIO
+                  // EXISTING PORTFOLIO
                   //================================================
 
                   if (portfolio != null)
+
                     PortfolioSummaryCard(
+
                       openPositions:
                           portfolio
                               .openPositions,
@@ -254,12 +296,34 @@ class _HomeScreenState
                               .unrealizedPnl,
                     ),
 
+
+                  //================================================
+                  // PAPER TRADING
+                  //
+                  // This is the backend automatic paper-trading
+                  // runtime.
+                  //
+                  // It is NOT real broker trading.
+                  //
+                  //================================================
+
+                  if (paperTrading != null)
+
+                    PaperTradingSummaryCard(
+
+                      paperTrading:
+                          paperTrading,
+                    ),
+
+
                   //================================================
                   // TRADING STATUS
                   //================================================
 
                   if (portfolio != null)
+
                     TradingStatusCard(
+
                       broker:
                           "Angel One",
 
@@ -267,7 +331,16 @@ class _HomeScreenState
                           dashboard
                               .marketStatus,
 
+                      //
+                      // Reflect paper runtime state here.
+                      //
+                      // This does NOT mean live broker orders
+                      // are enabled.
+                      //
+
                       autoTrading:
+                          paperTrading
+                              ?.running ??
                           false,
 
                       backendConnected:
@@ -278,12 +351,15 @@ class _HomeScreenState
                               .openPositions,
                     ),
 
+
                   //================================================
                   // LIVE MARKET
                   //================================================
 
                   if (market != null)
+
                     LiveMarketCard(
+
                       symbol:
                           dashboard
                               .marketSymbol,

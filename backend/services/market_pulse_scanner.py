@@ -113,7 +113,22 @@ class MarketPulseScanner:
 
     INTERVAL = "ONE_MINUTE"
 
-    HISTORY_DAYS = 30
+    #
+    # AWS HISTORICAL BOOTSTRAP POLICY
+    #
+    # Market Pulse is a seven-market analytical scanner.
+    # A 30-day ONE_MINUTE request for every market creates
+    # an unnecessary historical-request burst against
+    # Angel One.
+    #
+    # V1 bootstrap window:
+    #   2 calendar days per market
+    #
+    # Keep this intentionally smaller than the execution
+    # bootstrap because Market Pulse analyzes multiple
+    # markets independently.
+    #
+    HISTORY_DAYS = 2
 
     def __init__(self):
 

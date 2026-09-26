@@ -25,6 +25,10 @@ from backend.api.dashboard import (
     router as dashboard_router,
 )
 
+from backend.api.runtime import (
+    router as runtime_router,
+)
+
 from backend.api.market import (
     router as market_router,
 )
@@ -60,13 +64,42 @@ from backend.api.intelligence_api import (
 from backend.api.suggestions import (
     router as suggestions_router,
 )
+from backend.api.paper_trading import (
+    router as paper_trading_router,
+)
 
+from backend.api.nifty_real_trading import (
+    router as nifty_real_trading_router,
+)
+
+from backend.api.stock_options import (
+    router as stock_options_router,
+)
+from backend.api.mcx import (
+    router as mcx_router,
+)
+
+from backend.api.midcap import (
+    router as midcap_router,
+)
 from backend.services.trading_engine_service import (
     TradingEngineService,
 )
 
 from backend.services.market_pulse_scanner_service import (
     MarketPulseScannerService,
+)
+
+from backend.services.paper_trading_service import (
+    PaperTradingService,
+)
+
+from backend.services.stock_options_paper_scheduler import (
+    StockOptionsPaperScheduler,
+)
+
+from backend.api.stock_options import (
+    stock_options_paper_trading_service,
 )
 
 
@@ -104,6 +137,32 @@ async def lifespan(app: FastAPI):
 
     MarketPulseScannerService().start()
 
+    #
+    # =========================================================
+    # PAPER TRADING RUNTIME
+    # =========================================================
+    #
+    # Automatic paper trading is enabled.
+    #
+    # This remains completely separate from real broker
+    # execution. Paper trades are simulated only.
+    #
+
+    PaperTradingService().start()
+
+    #
+    # =========================================================
+    # STOCK OPTIONS PAPER TRADING
+    # =========================================================
+    #
+    # Independent from the existing NIFTY V1 paper runtime.
+    # Uses the same Stock Options service instance as the API.
+    #
+
+    StockOptionsPaperScheduler().start(
+        service=stock_options_paper_trading_service
+    )
+
     yield
 
     #
@@ -111,6 +170,10 @@ async def lifespan(app: FastAPI):
     # SHUTDOWN
     # =========================================================
     #
+
+#    PaperTradingService().stop()
+
+    StockOptionsPaperScheduler().stop()
 
     MarketPulseScannerService().stop()
 
@@ -213,6 +276,10 @@ app.include_router(
 )
 
 app.include_router(
+    runtime_router
+)
+
+app.include_router(
     market_router
 )
 
@@ -247,7 +314,25 @@ app.include_router(
 app.include_router(
     suggestions_router
 )
+app.include_router(
+    paper_trading_router
+)
 
+app.include_router(
+    nifty_real_trading_router
+)
+
+app.include_router(
+    stock_options_router
+)
+
+app.include_router(
+    midcap_router
+)
+
+app.include_router(
+    mcx_router
+)
 
 # =========================================================
 # ROOT

@@ -336,6 +336,25 @@ class OptionResolver:
             return []
 
         #
+        # Remove expired contracts
+        #
+        # The instrument master contains historical contracts.
+        # NEAREST must mean the nearest non-expired expiry.
+        #
+
+        today = datetime.now().date()
+
+        expiries = [
+            expiry
+            for expiry in expiries
+            if self._parse_expiry(expiry).date() >= today
+        ]
+
+        if not expiries:
+
+            return []
+
+        #
         # ALL Expiries
         #
 

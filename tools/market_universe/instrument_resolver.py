@@ -162,14 +162,30 @@ class InstrumentResolver:
                 f"No futures contract found for {instrument.symbol}"
             )
 
-        contracts.sort(
+        today = datetime.now().date()
+
+        valid_contracts = [
+            contract
+            for contract in contracts
+            if datetime.strptime(
+                contract["expiry"],
+                "%d%b%Y",
+            ).date() >= today
+        ]
+
+        if not valid_contracts:
+            raise RuntimeError(
+                f"No active futures contract found for {instrument.symbol}"
+            )
+
+        valid_contracts.sort(
             key=lambda x: datetime.strptime(
                 x["expiry"],
                 "%d%b%Y",
             )
         )
 
-        selected = contracts[0]
+        selected = valid_contracts[0]
 
         return TradingInstrument(
             symbol=selected["display_symbol"],

@@ -1,5 +1,5 @@
 {
-    "default_market": "CRUDEOIL_FUT",
+    "default_market": "NIFTY_FNO",
     "markets": {
         "NIFTY_FNO": {
             "symbol": "NIFTY",

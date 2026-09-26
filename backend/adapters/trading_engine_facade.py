@@ -17,13 +17,26 @@ from trading.runtime.runtime_manager import RuntimeManager
 
 class TradingEngineFacade:
 
+    # -----------------------------------------------------
+    # Legacy / Home API market
+    #
+    # Generic APIs historically represent the primary
+    # NIFTY trading engine. Keep that behavior explicit
+    # now that multiple market runtimes exist.
+    # -----------------------------------------------------
+
+    DEFAULT_MARKET = "NIFTY_FNO"
+
     def __init__(self):
 
         self._runtime = RuntimeManager()
 
     @property
     def state(self):
-        return self._runtime.get_state()
+
+        return self._runtime.get_state_for_market(
+            self.DEFAULT_MARKET
+        )
 
     def get_market_snapshot(self):
 

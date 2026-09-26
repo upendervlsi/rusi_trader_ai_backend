@@ -11,6 +11,7 @@ Paper Trade
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 
 from intelligence.signals.signal_type import SignalType
 
@@ -18,18 +19,56 @@ from intelligence.signals.signal_type import SignalType
 @dataclass(frozen=True)
 class PaperTrade:
 
+    # ================================================================
+    # SIGNAL
+    # ================================================================
+
     signal: SignalType
 
-    entry_price: float
+    # ================================================================
+    # SELECTED OPTION CONTRACT
+    # ================================================================
 
-    quantity: int
+    option_symbol: str = ""
 
-    stop_loss: float
+    option_token: str = ""
 
-    target_price: float
+    exchange: str = ""
 
-    status: str
+    strike: float = 0.0
 
-    pnl: float
+    expiry: str = ""
 
-    reason: str
+    option_type: str = ""
+
+    # ================================================================
+    # OPTION PREMIUM TRADE
+    # ================================================================
+
+    entry_price: float = 0.0
+
+    quantity: int = 0
+
+    stop_loss: float = 0.0
+
+    target_price: float = 0.0
+
+    # ================================================================
+    # RUNTIME
+    # ================================================================
+
+    status: str = "OPEN"
+
+    pnl: float = 0.0
+
+    current_price: float = 0.0
+
+    reason: str = ""
+
+    # ================================================================
+    # TRADE TIMING
+    # ================================================================
+
+    entry_time: datetime | None = None
+
+    exit_time: datetime | None = None

@@ -28,7 +28,7 @@ class TradingConfig:
 
     max_capital_per_trade: float = 0.10      # 10%
 
-    max_open_positions: int = 5
+    max_open_positions: int = 1
 
     # --------------------------------------------------
     # Risk Management
@@ -41,10 +41,38 @@ class TradingConfig:
     minimum_risk_reward: float = 2.0
 
     # --------------------------------------------------
+    # Option Premium Risk Model
+    # --------------------------------------------------
+
+    # Stop-loss percentage applied to the option premium.
+    option_stop_loss_percent: float = 25.0
+
+    # Target percentage applied to the option premium.
+    option_target_percent: float = 40.0
+    nifty_real_max_adverse_slippage_percent: float = 2.0
+
+    # --------------------------------------------------
     # Decision Engine
     # --------------------------------------------------
 
     minimum_confidence: float = 70.0
+
+    # --------------------------------------------------
+    # Position Exit Intelligence
+    # --------------------------------------------------
+
+    # Number of consecutive strong opposite decisions
+    # required before a market-reversal exit.
+    reversal_confirmation_cycles: int = 2
+
+    # Minimum confidence required for a reversal signal.
+    reversal_confirmation_confidence: float = 1.45
+
+    # Profit level at which dynamic profit protection activates.
+    profit_protection_activation_percent: float = 10.0
+
+    # Percentage of the favorable move to protect.
+    profit_protection_retrace_percent: float = 50.0
 
     # --------------------------------------------------
     # Stop Loss

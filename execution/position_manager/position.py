@@ -25,6 +25,8 @@ class Position:
 
     exchange: str
 
+    token: str
+
     transaction_type: str
 
     quantity: int
@@ -33,10 +35,42 @@ class Position:
 
     current_price: float
 
+    #
+    # Profit protection state
+    #
+
+    highest_price: float
+
+    highest_unrealized_pnl: float
+
+    profit_protection_active: bool
+
+    protected_price: float
+
+    #
+    # Market reversal confirmation state
+    #
+
+    reversal_count: int
+
+    last_reversal_signal: str
+
+    # Option trade risk levels
+
+    stop_loss: float
+
+    target_price: float
+
     unrealized_pnl: float
 
     realized_pnl: float
 
     entry_time: datetime
+
+    # Exit information.
+    # Populated only after the position is closed.
+    exit_time: datetime | None
+
+    exit_reason: str
 
     status: PositionStatus

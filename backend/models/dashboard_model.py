@@ -68,6 +68,114 @@ class MarketPulseModel(BaseModel):
     reason: str = ""
 
 
+class TodayPnLModel(BaseModel):
+
+    realized_pnl: float
+
+    unrealized_pnl: float
+
+    net_pnl: float
+
+
+class CurrentTradeModel(BaseModel):
+
+    position_id: str
+
+    symbol: str
+
+    exchange: str
+
+    transaction_type: str
+
+    quantity: int
+
+    entry_price: float
+
+    current_price: float
+
+    current_pnl: float
+
+    stop_loss: float
+
+    target_price: float
+
+    protection: str
+
+    status: str
+
+    entry_time: str
+
+
+class AITradeSignalModel(BaseModel):
+
+    direction: str | None
+
+    confidence: float | None
+
+    score: float | None
+
+    option: str | None
+
+    option_symbol: str | None
+
+    signal_status: str
+
+
+class TodayExecutionModel(BaseModel):
+
+    trades: int
+
+    wins: int
+
+    losses: int
+
+    win_rate: float
+
+
+class TradeHistoryModel(BaseModel):
+
+    position_id: str
+
+    symbol: str
+
+    exchange: str
+
+    option_type: str
+
+    transaction_type: str
+
+    quantity: int
+
+    entry_price: float
+
+    exit_price: float | None
+
+    pnl: float
+
+    exit_reason: str
+
+    entry_time: str
+
+    exit_time: str | None
+
+
+class CurrentMarketSignalModel(BaseModel):
+
+    symbol: str
+
+    display_name: str
+
+    signal: str | None
+
+    confidence: float | None
+
+    score: float | None
+
+    last_price: float | None
+
+    updated_time: str
+
+
 class DashboardModel(BaseModel):
 
     market_status: str
@@ -87,3 +195,15 @@ class DashboardModel(BaseModel):
     confidence: float | None
 
     portfolio: PortfolioSummaryModel
+
+    today_pnl: TodayPnLModel
+
+    current_trade: CurrentTradeModel | None
+
+    ai_trade_signal: AITradeSignalModel
+
+    today_execution: TodayExecutionModel
+
+    trade_history: list[TradeHistoryModel]
+
+    current_market_signal: CurrentMarketSignalModel

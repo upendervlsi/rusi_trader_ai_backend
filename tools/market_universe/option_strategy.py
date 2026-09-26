@@ -7,9 +7,18 @@ Option Strategy
 
 Defines how the AI wants to select an option contract.
 
-This module contains NO broker logic.
+RUSI V1 OPTION BUYING POLICY
 
-Sprint-19
+    Underlying BUY  -> BUY CE
+    Underlying SELL -> BUY PE
+    Underlying HOLD -> NO OPTION
+
+Important:
+    SELL does NOT mean selling an option.
+    SELL represents bearish underlying direction.
+    The selected PE is still purchased.
+
+This module contains NO broker logic.
 
 =============================================================
 """
@@ -41,33 +50,13 @@ class OptionType(str, Enum):
 
 class StrikeStrategy(str, Enum):
 
-    #
-    # At The Money
-    #
-
     ATM = "ATM"
-
-    #
-    # In The Money
-    #
 
     ITM = "ITM"
 
-    #
-    # Out Of The Money
-    #
-
     OTM = "OTM"
 
-    #
-    # Exact Strike
-    #
-
     EXACT = "EXACT"
-
-    #
-    # Future AI Ranking
-    #
 
     AI_SELECTED = "AI_SELECTED"
 
@@ -79,27 +68,11 @@ class StrikeStrategy(str, Enum):
 
 class ExpiryStrategy(str, Enum):
 
-    #
-    # Nearest Expiry
-    #
-
     NEAREST = "NEAREST"
-
-    #
-    # Second Expiry
-    #
 
     NEXT = "NEXT"
 
-    #
-    # Monthly Expiry
-    #
-
     MONTHLY = "MONTHLY"
-
-    #
-    # All Expiries
-    #
 
     ALL = "ALL"
 
@@ -112,54 +85,63 @@ class ExpiryStrategy(str, Enum):
 @dataclass(slots=True)
 class OptionStrategy:
     """
-    Defines how an option should be selected.
+    Defines how an option contract should be selected.
 
-    This object contains strategy only.
+    This object contains selection strategy only.
 
-    OptionResolver simply follows these rules.
+    It does NOT represent the transaction side.
+
+    RUSI V1 transaction policy:
+
+        CE -> BUY
+        PE -> BUY
+
+    The underlying recommendation determines whether
+    CE or PE is selected.
     """
 
-    #
+    # --------------------------------------------------------
     # CE / PE
-    #
+    # --------------------------------------------------------
 
     option_type: OptionType = OptionType.AUTO
 
-    #
+    # --------------------------------------------------------
     # ATM / ITM / OTM
-    #
+    # --------------------------------------------------------
 
     strike_strategy: StrikeStrategy = StrikeStrategy.ATM
 
+    # --------------------------------------------------------
+    # Strike distance
     #
-    # Used for
-
+    # Examples:
+    #
     # ITM1
     # ITM2
     # OTM1
     # OTM2
-
-    #
+    # --------------------------------------------------------
 
     strike_distance: int = 0
 
-    #
+    # --------------------------------------------------------
     # Expiry
-    #
+    # --------------------------------------------------------
 
-    expiry_strategy: ExpiryStrategy = ExpiryStrategy.NEAREST
+    expiry_strategy: ExpiryStrategy = (
+        ExpiryStrategy.NEAREST
+    )
 
-    #
-    # Exact Strike
-
-    #
+    # --------------------------------------------------------
+    # Exact strike
+    # --------------------------------------------------------
 
     exact_strike: float | None = None
 
-    #
-    # Future
-
-    #
+    # --------------------------------------------------------
+    # Future AI ranking inputs
+    # --------------------------------------------------------
 
     use_ai_ranking: bool = False
 
@@ -191,28 +173,69 @@ def default_strategy(
     recommendation: str,
 ) -> OptionStrategy:
     """
-    Current V1 compatibility.
+    Convert the underlying AI recommendation into the
+    option contract selection strategy.
 
-    BUY  -> CE
+    RUSI V1 OPTION BUYING:
 
-    SELL -> PE
+        BUY  -> CE -> BUY CE
 
-    HOLD -> AUTO
+        SELL -> PE -> BUY PE
 
-    ATM
+        HOLD -> AUTO
 
-    Nearest Expiry
+    IMPORTANT:
+
+        "SELL" here describes the underlying market
+        direction only.
+
+        It does NOT instruct the system to sell an option.
+
+    HOLD is represented by AUTO for backward compatibility,
+    but the execution/recommendation layer must prevent an
+    option trade when the final recommendation is HOLD.
+
+    Default strike:
+        ATM
+
+    Default expiry:
+        NEAREST
     """
 
-    recommendation = recommendation.upper()
+    recommendation = str(
+        recommendation
+    ).upper().strip()
+
+    # --------------------------------------------------------
+    # Bullish underlying
+    #
+    # NIFTY BUY -> CE
+    # Transaction -> BUY CE
+    # --------------------------------------------------------
 
     if recommendation == "BUY":
 
         option_type = OptionType.CE
 
+    # --------------------------------------------------------
+    # Bearish underlying
+    #
+    # NIFTY SELL -> PE
+    # Transaction -> BUY PE
+    # --------------------------------------------------------
+
     elif recommendation == "SELL":
 
         option_type = OptionType.PE
+
+    # --------------------------------------------------------
+    # HOLD
+    #
+    # No directional option should be selected.
+    #
+    # AUTO is retained only for backward compatibility.
+    # The caller must not create an executable option trade.
+    # --------------------------------------------------------
 
     else:
 

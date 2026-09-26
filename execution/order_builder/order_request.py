@@ -8,6 +8,8 @@ class OrderRequest:
 
     exchange: str
 
+    token: str
+
     transaction_type: str
 
     quantity: int

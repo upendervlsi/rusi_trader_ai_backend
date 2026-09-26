@@ -8,6 +8,7 @@ import '../models/dashboard_model.dart';
 import '../models/market_model.dart';
 import '../models/recommendation_model.dart';
 import '../models/portfolio_model.dart';
+import '../models/paper_trading_model.dart';
 
 
 class HomeViewModel
@@ -28,6 +29,8 @@ class HomeViewModel
   RecommendationModel? recommendation;
 
   PortfolioModel? portfolio;
+
+  PaperTradingModel? paperTrading;
 
 
   //==========================================================
@@ -58,6 +61,7 @@ class HomeViewModel
   //==========================================================
 
   Future<void> load() async {
+
     loading = true;
 
     notifyListeners();
@@ -77,6 +81,7 @@ class HomeViewModel
   //==========================================================
 
   Future<void> _initialLoad() async {
+
     if (_refreshInProgress) {
       return;
     }
@@ -84,6 +89,7 @@ class HomeViewModel
     _refreshInProgress = true;
 
     try {
+
       //======================================================
       // PRIMARY DASHBOARD
       //======================================================
@@ -91,6 +97,7 @@ class HomeViewModel
       dashboard =
           await _repository
               .getDashboard();
+
 
       //======================================================
       // EXISTING SUPPORTING DATA
@@ -110,9 +117,25 @@ class HomeViewModel
           await _repository
               .getPortfolio();
 
+
+      //======================================================
+      // PAPER TRADING
+      //
+      // Automatic paper-trading runtime status.
+      //======================================================
+
+      paperTrading =
+          await _repository
+              .getPaperTrading();
+
+
       error = null;
 
-    } catch (e, stackTrace) {
+    } catch (
+      e,
+      stackTrace
+    ) {
+
       debugPrint(
         "HOME INITIAL LOAD ERROR: $e",
       );
@@ -124,7 +147,9 @@ class HomeViewModel
       error = e.toString();
 
     } finally {
+
       _refreshInProgress = false;
+
     }
   }
 
@@ -132,23 +157,14 @@ class HomeViewModel
   //==========================================================
   // FAST DASHBOARD REFRESH
   //
-  // IMPORTANT:
-  // Do NOT reload /market, /recommendation and /portfolio
-  // every five seconds.
-  //
-  // /api/dashboard is now the fast Home snapshot.
+  // Dashboard remains the primary fast snapshot.
   //==========================================================
 
   Future<void> _refreshDashboard()
       async {
 
-    if (_refreshInProgress) {
-      return;
-    }
-
-    _refreshInProgress = true;
-
     try {
+
       final latestDashboard =
           await _repository
               .getDashboard();
@@ -156,9 +172,11 @@ class HomeViewModel
       dashboard =
           latestDashboard;
 
-      error = null;
+    } catch (
+      e,
+      stackTrace
+    ) {
 
-    } catch (e, stackTrace) {
       debugPrint(
         "HOME DASHBOARD REFRESH ERROR: $e",
       );
@@ -171,10 +189,53 @@ class HomeViewModel
       // Keep the last good dashboard
       // visible instead of blanking the UI.
       //
+
       error = e.toString();
 
-    } finally {
-      _refreshInProgress = false;
+    }
+  }
+
+
+  //==========================================================
+  // PAPER TRADING REFRESH
+  //
+  // Reads the latest paper-trading status and P&L.
+  //
+  // This is intentionally separate from dashboard refresh
+  // so a paper-trading API failure does not destroy the
+  // existing dashboard.
+  //==========================================================
+
+  Future<void> _refreshPaperTrading()
+      async {
+
+    try {
+
+      final latestPaperTrading =
+          await _repository
+              .getPaperTrading();
+
+      paperTrading =
+          latestPaperTrading;
+
+    } catch (
+      e,
+      stackTrace
+    ) {
+
+      debugPrint(
+        "HOME PAPER TRADING REFRESH ERROR: $e",
+      );
+
+      debugPrint(
+        "$stackTrace",
+      );
+
+      //
+      // Keep the last good paper-trading
+      // state visible.
+      //
+
     }
   }
 
@@ -193,7 +254,9 @@ class HomeViewModel
         Timer.periodic(
       _refreshInterval,
       (_) async {
+
         await refresh();
+
       },
     );
   }
@@ -217,7 +280,32 @@ class HomeViewModel
 
   Future<void> refresh() async {
 
-    await _refreshDashboard();
+    if (_refreshInProgress) {
+      return;
+    }
+
+    _refreshInProgress = true;
+
+    try {
+
+      //======================================================
+      // FAST DASHBOARD
+      //======================================================
+
+      await _refreshDashboard();
+
+
+      //======================================================
+      // PAPER TRADING
+      //======================================================
+
+      await _refreshPaperTrading();
+
+    } finally {
+
+      _refreshInProgress = false;
+
+    }
 
     if (!hasListeners) {
       return;

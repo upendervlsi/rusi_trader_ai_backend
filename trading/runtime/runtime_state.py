@@ -47,6 +47,12 @@ class TradingRuntimeState:
 
     live_price: float | None = None
 
+    # Live LTP of the currently selected option contract.
+    #
+    # This is intentionally separate from live_price because
+    # live_price represents the primary runtime instrument.
+    option_live_price: float | None = None
+
     # ---------------------------------------------------------
     # Intelligence
     # ---------------------------------------------------------
@@ -85,7 +91,14 @@ class TradingRuntimeState:
     # Position
     # ---------------------------------------------------------
 
+    # Latest/current position.
     position: Any = None
+
+    # Complete runtime position registry.
+    # Contains both OPEN and CLOSED positions.
+    positions: list[Any] = field(
+        default_factory=list
+    )
 
     # ---------------------------------------------------------
     # Portfolio

@@ -42,6 +42,8 @@ class TradingRecommendation:
 
     option_type: str = ""
 
+    lot_size: int = 1
+
     #
     # Scores
     #

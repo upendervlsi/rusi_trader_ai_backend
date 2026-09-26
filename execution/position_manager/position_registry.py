@@ -23,6 +23,21 @@ class PositionRegistry:
 
         return self._positions.get(position_id)
 
+    def remove(self, position_id):
+        """
+        Remove and return a position from the registry.
+
+        Returns None when the position does not exist.
+        """
+
+        if not position_id:
+            return None
+
+        return self._positions.pop(
+            position_id,
+            None,
+        )
+
     def all(self):
 
         return list(self._positions.values())

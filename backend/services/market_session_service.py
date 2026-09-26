@@ -156,6 +156,105 @@ class MarketSessionService:
         return False
 
     # ---------------------------------------------------------
+    # New Entry Cutoff
+    # ---------------------------------------------------------
+
+    def is_new_entry_allowed(
+        self,
+        exchange: str,
+        now: datetime | None = None,
+    ) -> bool:
+        """
+        Return whether a new intraday entry is allowed.
+
+        This is intentionally separate from market-open status.
+
+        A market may remain OPEN while new entries are blocked
+        near the broker/session close.
+
+        Existing positions and exits are not affected by this
+        method.
+        """
+        exchange = exchange.upper()
+
+        market_config = (
+            self._config
+            .get("markets", {})
+            .get(exchange)
+        )
+
+        if not market_config:
+            return False
+
+        if not market_config.get(
+            "enabled",
+            False,
+        ):
+            return False
+
+        timezone_name = market_config.get(
+            "timezone",
+            "Asia/Kolkata",
+        )
+
+        timezone = ZoneInfo(
+            timezone_name
+        )
+
+        if now is None:
+            now = datetime.now(
+                timezone
+            )
+        else:
+            if now.tzinfo is None:
+                now = now.replace(
+                    tzinfo=timezone
+                )
+            else:
+                now = now.astimezone(
+                    timezone
+                )
+
+        # Market must still be open.
+        if not self.is_market_open(
+            exchange,
+            now,
+        ):
+            return False
+
+        cutoff_value = market_config.get(
+            "new_entry_cutoff"
+        )
+
+        # No entry cutoff configured:
+        # market-open state remains the authority.
+        if not cutoff_value:
+            return True
+
+        cutoff_time = self._parse_time(
+            cutoff_value
+        )
+
+        return now.time() < cutoff_time
+
+    def get_new_entry_status(
+        self,
+        exchange: str,
+        now: datetime | None = None,
+    ) -> str:
+        """
+        Return OPEN when a new entry is allowed,
+        otherwise CLOSED.
+        """
+        if self.is_new_entry_allowed(
+            exchange,
+            now,
+        ):
+            return "OPEN"
+
+        return "CLOSED"
+
+    # ---------------------------------------------------------
     # Status
     # ---------------------------------------------------------
 

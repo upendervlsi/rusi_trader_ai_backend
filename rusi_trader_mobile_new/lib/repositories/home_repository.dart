@@ -5,10 +5,15 @@ import '../models/dashboard_model.dart';
 import '../models/market_model.dart';
 import '../models/recommendation_model.dart';
 import '../models/portfolio_model.dart';
+import '../models/paper_trading_model.dart';
 
 class HomeRepository {
 
   final ApiClient _api = ApiClient();
+
+  //==========================================================
+  // MARKET
+  //==========================================================
 
   Future<MarketModel> getMarket() async {
 
@@ -22,6 +27,10 @@ class HomeRepository {
 
   }
 
+  //==========================================================
+  // RECOMMENDATION
+  //==========================================================
+
   Future<RecommendationModel> getRecommendation() async {
 
     print("Loading Dashboard2");
@@ -33,6 +42,10 @@ class HomeRepository {
     return RecommendationModel.fromJson(json);
 
   }
+
+  //==========================================================
+  // PORTFOLIO
+  //==========================================================
 
   Future<PortfolioModel> getPortfolio() async {
 
@@ -46,6 +59,10 @@ class HomeRepository {
 
   }
 
+  //==========================================================
+  // DASHBOARD
+  //==========================================================
+
   Future<DashboardModel> getDashboard() async {
 
     print("Loading Dashboard4");
@@ -55,6 +72,27 @@ class HomeRepository {
     );
 
     return DashboardModel.fromJson(json);
+
+  }
+
+  //==========================================================
+  // PAPER TRADING
+  //
+  // Reads the automatic paper-trading runtime status
+  // from the backend.
+  //==========================================================
+
+  Future<PaperTradingModel> getPaperTrading() async {
+
+    print("Loading Paper Trading");
+
+    final json = await _api.get(
+      Endpoints.paperTrading,
+    );
+
+    return PaperTradingModel.fromJson(
+      json,
+    );
 
   }
 

@@ -29,6 +29,9 @@ class Endpoints {
   static const String portfolio =
       "/api/portfolio";
 
+  static const String paperTrading =
+      "/api/paper-trading/status";
+
   static const String intelligence =
       "/api/intelligence";
 

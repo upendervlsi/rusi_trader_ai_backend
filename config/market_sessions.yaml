@@ -19,6 +19,19 @@ markets:
       - open: "09:15"
         close: "15:30"
 
+  NFO:
+
+    enabled: true
+
+    timezone: Asia/Kolkata
+
+    sessions:
+
+      - open: "09:15"
+        close: "15:30"
+
+    new_entry_cutoff: "15:29"
+
   BSE:
 
     enabled: true
@@ -38,9 +51,5 @@ markets:
 
     sessions:
 
-      #
-      # Configure these according to the official MCX schedule
-      # and update if the exchange changes its timings.
-      #
       - open: "09:00"
         close: "23:30"

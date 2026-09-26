@@ -192,7 +192,7 @@ class MarketPulseAnalyzer:
     # Keep the existing design intent of using enough history
     # for the intelligence engine.
     #
-    HISTORY_DAYS = 30
+    HISTORY_DAYS = 5
 
     # ========================================================
     # VERIFIED HISTORICAL INDEX TOKENS
