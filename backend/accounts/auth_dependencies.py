@@ -3,10 +3,11 @@ RUSI Trader AI
 
 FastAPI authentication dependencies.
 
-Phase 3B-1:
+Phase 3B:
     - Resolve an authenticated user from a Bearer session token.
     - Convert authentication failure into HTTP 401.
-    - No trading endpoint integration yet.
+    - Persist users through AuthUserStore.
+    - Sessions remain process-local.
     - No broker credentials.
 """
 
@@ -24,20 +25,27 @@ from backend.accounts.auth_models import (
 from backend.accounts.auth_registry import (
     AuthRegistry,
 )
+from backend.accounts.auth_store import (
+    AuthUserStore,
+)
 
 
 _bearer_scheme = HTTPBearer(
     auto_error=False
 )
 
-_auth_registry = AuthRegistry()
+
+_auth_registry = AuthRegistry(
+    store=AuthUserStore()
+)
 
 
 def get_auth_registry() -> AuthRegistry:
     """
     Return the process-level authentication registry.
 
-    Phase 3B-1 keeps authentication in memory.
+    Users are persisted through AuthUserStore.
+    Authentication sessions remain process-local.
     """
     return _auth_registry
 

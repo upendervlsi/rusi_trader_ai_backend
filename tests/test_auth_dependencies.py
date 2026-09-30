@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+import backend.accounts.auth_dependencies as auth_dependencies
 from backend.accounts.auth_dependencies import (
     get_auth_registry,
     get_current_user,
@@ -12,12 +13,12 @@ from backend.accounts.auth_models import (
 
 def setup_function():
 
-    get_auth_registry().clear()
+    auth_dependencies._auth_registry = auth_dependencies.AuthRegistry()
 
 
 def teardown_function():
 
-    get_auth_registry().clear()
+    auth_dependencies._auth_registry = auth_dependencies.AuthRegistry()
 
 
 def make_app() -> FastAPI:
