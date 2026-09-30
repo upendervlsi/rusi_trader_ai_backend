@@ -29,6 +29,10 @@ from backend.api.account import (
     router as account_router,
 )
 
+from backend.api.account_portfolio import (
+    router as account_portfolio_router,
+)
+
 from backend.api.dashboard import (
     router as dashboard_router,
 )
@@ -289,6 +293,10 @@ app.include_router(
 
 app.include_router(
     account_router
+)
+
+app.include_router(
+    account_portfolio_router
 )
 
 app.include_router(
