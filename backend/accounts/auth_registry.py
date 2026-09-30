@@ -25,16 +25,39 @@ from backend.accounts.auth_models import (
     AuthSession,
     User,
 )
+from backend.accounts.auth_store import (
+    AuthUserStore,
+)
 
 
 class AuthRegistry:
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        store: AuthUserStore | None = None,
+    ) -> None:
+
         self._lock = RLock()
 
         self._users: dict[str, User] = {}
         self._username_index: dict[str, str] = {}
         self._sessions: dict[str, AuthSession] = {}
+
+        self._store = store
+
+        if self._store is not None:
+            self._load_persisted_users()
+
+    def _load_persisted_users(self) -> None:
+
+        users = self._store.load_users()
+
+        for user in users:
+            self.register_user(
+                user,
+                persist=False,
+            )
+
 
     @staticmethod
     def _normalize_username(
@@ -122,6 +145,7 @@ class AuthRegistry:
     def register_user(
         self,
         user: User,
+        persist: bool = True,
     ) -> User:
 
         if not user.user_id:
@@ -151,6 +175,14 @@ class AuthRegistry:
             self._username_index[
                 username
             ] = user.user_id
+
+            if (
+                persist
+                and self._store is not None
+            ):
+                self._store.save_users(
+                    list(self._users.values())
+                )
 
         return user
 
