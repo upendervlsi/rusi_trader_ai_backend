@@ -82,6 +82,10 @@ from backend.api.mcx import (
 from backend.api.midcap import (
     router as midcap_router,
 )
+
+from backend.api.sensex_paper import (
+    router as sensex_paper_router,
+)
 from backend.services.trading_engine_service import (
     TradingEngineService,
 )
@@ -328,6 +332,10 @@ app.include_router(
 
 app.include_router(
     midcap_router
+)
+
+app.include_router(
+    sensex_paper_router
 )
 
 app.include_router(

@@ -249,6 +249,27 @@ class ExecutionManager:
         self._nifty_real_exit_monitor = None
 
         #
+        # NIFTY Real consecutive complete-signal guard.
+        #
+        # Remembers only the last successfully executed NIFTY real
+        # BUY signal. The state survives process restarts.
+        #
+        self._nifty_real_last_executed_signal_path = (
+            Path(
+                "runs/runtime/"
+                "NIFTY_FNO_real_last_executed_signal.json"
+            )
+            if self._market_name == "NIFTY_FNO"
+            else None
+        )
+
+        self._nifty_real_last_executed_signal = (
+            self._load_nifty_real_last_executed_signal()
+            if self._market_name == "NIFTY_FNO"
+            else None
+        )
+
+        #
         # NIFTY Real Trading entry control.
         #
         # This controls NEW real broker entries only.
@@ -357,6 +378,238 @@ class ExecutionManager:
     # ---------------------------------------------------------
     # NIFTY Real Trading Entry Control
     # ---------------------------------------------------------
+
+    def _load_nifty_real_last_executed_signal(self):
+        """
+        Load the last successfully executed NIFTY real entry signal.
+        """
+        path = self._nifty_real_last_executed_signal_path
+
+        if path is None or not path.exists():
+            return None
+
+        try:
+            import json
+
+            data = json.loads(path.read_text())
+
+            if not isinstance(data, dict):
+                return None
+
+            signal = data.get("signal")
+
+            if not isinstance(signal, dict):
+                return None
+
+            return signal
+
+        except Exception as exc:
+            logger.warning(
+                "NIFTY Real Last Executed Signal : "
+                "Unable to load persisted signal : %s",
+                exc,
+            )
+            return None
+
+    def _build_nifty_real_entry_signal(self, context):
+        """
+        Build the stable identity of the complete BUY signal.
+
+        Dynamic values such as LTP, confidence and score are excluded.
+        """
+        recommendation = getattr(
+            context,
+            "recommendation",
+            None,
+        )
+
+        decision = getattr(
+            context,
+            "decision",
+            None,
+        )
+
+        order = getattr(
+            context,
+            "order",
+            None,
+        )
+
+        decision_signal = getattr(
+            decision,
+            "signal",
+            "",
+        )
+
+        decision_signal = getattr(
+            decision_signal,
+            "name",
+            decision_signal,
+        )
+
+        try:
+            strike = float(
+                getattr(
+                    recommendation,
+                    "strike",
+                    0.0,
+                ) or 0.0
+            )
+        except (TypeError, ValueError):
+            strike = 0.0
+
+        return {
+            "direction": str(decision_signal),
+            "transaction_type": str(
+                getattr(
+                    order,
+                    "transaction_type",
+                    "",
+                )
+            ),
+            "underlying_symbol": str(
+                getattr(
+                    recommendation,
+                    "underlying_symbol",
+                    "",
+                ) or ""
+            ),
+            "option_symbol": str(
+                getattr(
+                    recommendation,
+                    "option_symbol",
+                    "",
+                )
+                or getattr(
+                    order,
+                    "symbol",
+                    "",
+                )
+                or ""
+            ),
+            "option_token": str(
+                getattr(
+                    recommendation,
+                    "option_token",
+                    "",
+                )
+                or getattr(
+                    order,
+                    "token",
+                    "",
+                )
+                or ""
+            ),
+            "exchange": str(
+                getattr(
+                    recommendation,
+                    "exchange",
+                    "",
+                )
+                or getattr(
+                    order,
+                    "exchange",
+                    "",
+                )
+                or ""
+            ),
+            "expiry": str(
+                getattr(
+                    recommendation,
+                    "expiry",
+                    "",
+                )
+                or ""
+            ),
+            "strike": strike,
+            "option_type": str(
+                getattr(
+                    recommendation,
+                    "option_type",
+                    "",
+                )
+                or ""
+            ),
+        }
+
+    def _nifty_real_signal_is_same_as_last_executed(
+        self,
+        context,
+    ):
+        """
+        Return True only when the complete current signal is identical
+        to the last successfully executed signal.
+        """
+        previous = self._nifty_real_last_executed_signal
+
+        if not previous:
+            return False
+
+        current = self._build_nifty_real_entry_signal(
+            context
+        )
+
+        return current == previous
+
+    def _save_nifty_real_last_executed_signal(
+        self,
+        context,
+    ):
+        """
+        Persist the signal after confirmed broker execution.
+        """
+        path = self._nifty_real_last_executed_signal_path
+
+        if path is None:
+            return
+
+        import json
+
+        signal = self._build_nifty_real_entry_signal(
+            context
+        )
+
+        try:
+            path.parent.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+
+            payload = {
+                "version": 1,
+                "market": "NIFTY_FNO",
+                "signal": signal,
+            }
+
+            tmp = path.with_suffix(".json.tmp")
+
+            tmp.write_text(
+                json.dumps(
+                    payload,
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n"
+            )
+
+            tmp.replace(path)
+
+            self._nifty_real_last_executed_signal = signal
+
+            logger.info(
+                "NIFTY Real Last Executed Signal : "
+                "Persisted | Option=%s | Token=%s | Direction=%s",
+                signal["option_symbol"],
+                signal["option_token"],
+                signal["direction"],
+            )
+
+        except Exception as exc:
+            logger.error(
+                "NIFTY Real Last Executed Signal : "
+                "Persistence failed : %s",
+                exc,
+            )
 
     def _nifty_real_eod_exit_due(self) -> bool:
         """
@@ -3101,41 +3354,12 @@ class ExecutionManager:
                         continue
 
                     #
-                    # First reconcile any previously submitted real
-                    # SELL. This method NEVER submits a new order.
-                    #
-
-                    pending_exit_result = (
-                        self._reconcile_and_process_nifty_real_pending_exit(
-                            position
-                        )
-                    )
-
-                    if pending_exit_result.get("blocked"):
-                        logger.warning(
-                            "NIFTY Real Exit : "
-                            "New SELL blocked while previous "
-                            "exit remains unresolved | Position=%s | "
-                            "Status=%s",
-                            position.position_id,
-                            pending_exit_result.get("status"),
-                        )
-                        continue
-
-                    #
-                    # A confirmed pending SELL may already have closed
-                    # the position. Do not evaluate another exit.
-                    #
-
-                    if position.status.value != "OPEN":
-                        continue
-
-                    #
-                    # Mandatory NIFTY Real EOD exit.
+                    # Mandatory NIFTY Real EOD exit MUST have priority.
                     #
                     # IMPORTANT:
-                    # - Pending SELL reconciliation has already run.
-                    # - An unresolved previous SELL remains blocked.
+                    # - 15:15 IST is a mandatory exit boundary.
+                    # - A previous-position pending SELL must NEVER delay
+                    #   the current position's mandatory EOD exit.
                     # - This uses the SAME broker-confirmed exit path.
                     # - Existing SL/profit-protection/reversal logic is
                     #   completely untouched.
@@ -3165,6 +3389,36 @@ class ExecutionManager:
                             exit_result.get("closed"),
                         )
 
+                        continue
+
+                    #
+                    # First reconcile any previously submitted real
+                    # SELL. This method NEVER submits a new order.
+                    #
+
+                    pending_exit_result = (
+                        self._reconcile_and_process_nifty_real_pending_exit(
+                            position
+                        )
+                    )
+
+                    if pending_exit_result.get("blocked"):
+                        logger.warning(
+                            "NIFTY Real Exit : "
+                            "New SELL blocked while previous "
+                            "exit remains unresolved | Position=%s | "
+                            "Status=%s",
+                            position.position_id,
+                            pending_exit_result.get("status"),
+                        )
+                        continue
+
+                    #
+                    # A confirmed pending SELL may already have closed
+                    # the position. Do not evaluate another exit.
+                    #
+
+                    if position.status.value != "OPEN":
                         continue
 
                     #
@@ -3925,6 +4179,40 @@ class ExecutionManager:
                     #
                     nifty_adverse_slippage_blocked = False
 
+                    #
+                    # NIFTY Real consecutive complete-signal guard.
+                    #
+                    # Reuse the existing entry-block flag so the
+                    # established broker execution path remains intact.
+                    #
+                    if (
+                        self._config.execution_mode == ExecutionMode.LIVE
+                        and self._market_name == "NIFTY_FNO"
+                        and self._nifty_real_signal_is_same_as_last_executed(
+                            context
+                        )
+                    ):
+
+                        nifty_adverse_slippage_blocked = True
+
+                        current_signal = (
+                            self._build_nifty_real_entry_signal(
+                                context
+                            )
+                        )
+
+                        logger.warning(
+                            "NIFTY Real Entry BLOCKED : "
+                            "SAME CONSECUTIVE COMPLETE SIGNAL | "
+                            "Direction=%s | Option=%s | Token=%s | "
+                            "Strike=%s | OptionType=%s",
+                            current_signal["direction"],
+                            current_signal["option_symbol"],
+                            current_signal["option_token"],
+                            current_signal["strike"],
+                            current_signal["option_type"],
+                        )
+
                     if (
                         self._config.execution_mode == ExecutionMode.LIVE
                         and self._market_name == "NIFTY_FNO"
@@ -4167,6 +4455,24 @@ class ExecutionManager:
                     )
 
                     context.position = position
+
+                    #
+                    # Persist the complete NIFTY real BUY signal only
+                    # after broker execution succeeded and the local
+                    # position was created.
+                    #
+                    # This is intentionally NOT persisted when:
+                    # - the AI merely generates a recommendation
+                    # - the order is rejected
+                    # - the order is accepted but fill is unresolved
+                    #
+                    if (
+                        self._config.execution_mode == ExecutionMode.LIVE
+                        and self._market_name == "NIFTY_FNO"
+                    ):
+                        self._save_nifty_real_last_executed_signal(
+                            context
+                        )
 
                     self._trade_journal.record(
                         context,

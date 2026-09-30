@@ -69,7 +69,7 @@ class TradingConfig:
     reversal_confirmation_confidence: float = 1.45
 
     # Profit level at which dynamic profit protection activates.
-    profit_protection_activation_percent: float = 10.0
+    profit_protection_activation_percent: float = 5.0
 
     # Percentage of the favorable move to protect.
     profit_protection_retrace_percent: float = 50.0

@@ -38,3 +38,12 @@ def stop_paper_trading():
 def paper_trading_status():
 
     return service.status()
+
+
+@router.get("/dashboard")
+def paper_trading_dashboard():
+
+    # READ ONLY:
+    # Exposes existing PaperTrade records for the dashboard.
+    # Does not start/stop trading, contact the broker, or modify trades.
+    return service.dashboard_snapshot()
