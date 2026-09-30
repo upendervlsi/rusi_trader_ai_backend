@@ -36,6 +36,9 @@ from intelligence.paper_trading.paper_portfolio import PaperPortfolio
 from intelligence.paper_trading.paper_portfolio_manager import (
     PaperPortfolioManager,
 )
+from backend.accounts.account_portfolio_registry import (
+    AccountPortfolioRegistry,
+)
 from intelligence.signals.signal_type import SignalType
 from trading.runtime.runtime_manager import RuntimeManager
 from backend.services.position_management.v2_position_manager import (
@@ -147,9 +150,19 @@ class PaperTradingService:
 
                 cls._instance._runtime = RuntimeManager()
 
-                cls._instance._portfolio = PaperPortfolio(
-                    capital=cls.INITIAL_CAPITAL,
-                    available_capital=cls.INITIAL_CAPITAL,
+                cls._instance._portfolio_registry = (
+                    AccountPortfolioRegistry()
+                )
+
+                cls._instance._default_account_id = (
+                    "DEFAULT_PAPER_ACCOUNT"
+                )
+
+                cls._instance._portfolio = (
+                    cls._instance._portfolio_registry.create(
+                        cls._instance._default_account_id,
+                        cls.INITIAL_CAPITAL,
+                    )
                 )
 
                 cls._instance._portfolio_manager = (
