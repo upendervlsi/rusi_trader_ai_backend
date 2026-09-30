@@ -21,6 +21,10 @@ from backend.api.health import (
     router as health_router,
 )
 
+from backend.api.auth import (
+    router as auth_router,
+)
+
 from backend.api.dashboard import (
     router as dashboard_router,
 )
@@ -273,6 +277,10 @@ app.add_middleware(
 
 app.include_router(
     health_router
+)
+
+app.include_router(
+    auth_router
 )
 
 app.include_router(
