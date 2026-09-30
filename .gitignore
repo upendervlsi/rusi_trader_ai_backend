@@ -81,3 +81,8 @@ rusi_trader_mobile_backup/
 
 # Separate Flutter SDK repository - not part of RUSI source
 /mobile/flutter/
+
+# DEV runtime-generated data
+/data/
+/backend/accounts/__pycache__/
+/tests/__pycache__/
