@@ -25,6 +25,10 @@ from backend.api.auth import (
     router as auth_router,
 )
 
+from backend.api.account import (
+    router as account_router,
+)
+
 from backend.api.dashboard import (
     router as dashboard_router,
 )
@@ -281,6 +285,10 @@ app.include_router(
 
 app.include_router(
     auth_router
+)
+
+app.include_router(
+    account_router
 )
 
 app.include_router(
