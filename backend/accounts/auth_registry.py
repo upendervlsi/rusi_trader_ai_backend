@@ -209,6 +209,58 @@ class AuthRegistry:
 
         return user
 
+    def change_password(
+        self,
+        user_id: str,
+        new_password: str,
+        persist: bool = True,
+    ) -> User:
+
+        if not user_id:
+            raise ValueError(
+                "user_id cannot be empty."
+            )
+
+        if not new_password:
+            raise ValueError(
+                "password cannot be empty."
+            )
+
+        new_password_hash = self.hash_password(
+            new_password
+        )
+
+        with self._lock:
+
+            user = self._users.get(
+                user_id
+            )
+
+            if user is None:
+                raise KeyError(
+                    f"User not found: {user_id}"
+                )
+
+            updated_user = User(
+                user_id=user.user_id,
+                username=user.username,
+                password_hash=new_password_hash,
+                status=user.status,
+                created_at=user.created_at,
+            )
+
+            self._users[user_id] = updated_user
+
+            if (
+                persist
+                and self._store is not None
+            ):
+                self._store.save_users(
+                    list(self._users.values())
+                )
+
+        return updated_user
+
     def authenticate(
         self,
         username: str,
