@@ -3,14 +3,12 @@ RUSI Trader AI
 
 Account registry.
 
-Phase 1 implementation:
-    - In-process account registry.
-    - Thread safe.
-    - No authentication.
+Phase 3B-5:
+    - Thread-safe account registry.
+    - Optional persistent account store.
     - No broker credentials.
+    - No broker tokens.
     - No trading operations.
-
-Persistence/authentication will be introduced in later phases.
 """
 
 from __future__ import annotations
@@ -18,15 +16,38 @@ from __future__ import annotations
 from threading import RLock
 
 from backend.accounts.account_models import Account
+from backend.accounts.account_store import AccountStore
 
 
 class AccountRegistry:
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        store: AccountStore | None = None,
+    ) -> None:
+
         self._lock = RLock()
         self._accounts: dict[str, Account] = {}
+        self._store = store
 
-    def register(self, account: Account) -> Account:
+        if self._store is not None:
+            self._load_persisted_accounts()
+
+    def _load_persisted_accounts(self) -> None:
+
+        accounts = self._store.load_accounts()
+
+        for account in accounts:
+            self.register(
+                account,
+                persist=False,
+            )
+
+    def register(
+        self,
+        account: Account,
+        persist: bool = True,
+    ) -> Account:
         """
         Register a new account.
 
@@ -54,6 +75,14 @@ class AccountRegistry:
             self._accounts[
                 account.account_id
             ] = account
+
+            if (
+                persist
+                and self._store is not None
+            ):
+                self._store.save_accounts(
+                    list(self._accounts.values())
+                )
 
         return account
 
