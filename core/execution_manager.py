@@ -2594,7 +2594,10 @@ class ExecutionManager:
         # by BrokerManager. This does not affect Paper Trading
         # or other market execution paths.
         #
-        if self._market_name == "NIFTY_FNO":
+        if (
+            self._market_name == "NIFTY_FNO"
+            and self._config.execution_mode == ExecutionMode.LIVE
+        ):
             self._nifty_real_order_executor = (
                 NiftyRealOrderExecutor(
                     self._broker_manager.smartapi_client
